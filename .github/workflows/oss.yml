@@ -1,31 +1,50 @@
-name: Sync to S3 via rclone (Checksum)
+name: Sync to Aliyun OSS
 
 on:
   push:
     branches:
-      - main # 仅在 main 分支有推送时触发
+      - sync  # 仅在推送到 main 分支时触发
 
 jobs:
-  rclone-sync:
+  sync-to-oss:
     runs-on: ubuntu-latest
     steps:
+      # 步骤1: 检出您的仓库代码
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: rclone sync to S3
-        uses: rclone/rclone-action@v1.4.0
-        with:
-          rclone_config: |
-            [s3]
-            type = s3
-            provider = Alibaba
-            env_auth = true
-            access_key_id = ${{ secrets.ACCESS_KEY_ID }}
-            secret_access_key = ${{ secrets.ACCESS_KEY_SECRET }}
-            region = ${{ secrets.REGION }}
-            endpoint = ${{ secrets.ENDPOINT }}
-          args: |
-            sync . s3:${{ secrets.BUCKET_NAME }}/2233-test/ \
-            --checksum \
-            --fast-list \
-            --progress
+      # 步骤2: 下载、解压并安装指定版本的 ossutil
+      - name: Install specific ossutil version
+        run: |
+          # 下载您指定的 zip 压缩包
+          curl -L "https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil-v1.7.19-linux-amd64.zip" -o ossutil.zip
+          
+          # 解压文件
+          unzip ossutil.zip
+          
+          # 从解压出的文件夹中将可执行文件移动到系统路径下，并重命名为 ossutil
+          # 注意：文件夹名称需要和压缩包内的实际名称匹配
+          mv ossutil-v1.7.19-linux-amd64/ossutil64 /usr/local/bin/ossutil
+          
+          # 赋予执行权限
+          chmod +x /usr/local/bin/ossutil
+          
+          # (可选) 清理下载的压缩包
+          rm ossutil.zip
+
+      # 步骤3: 使用 sync --update --delete 执行增量同步
+      - name: Sync incrementally to OSS (with delete)
+        env:
+          # 从 GitHub Secrets 中读取阿里云凭证
+          ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
+          ACCESS_KEY_SECRET: ${{ secrets.ACCESS_KEY_SECRET }}
+        run: |
+          # 使用 sync 命令并配合 --update 和 --delete 参数
+          # 这将实现本地与 OSS 之间完美的镜像同步
+          ossutil sync ./ oss://img535a/2233-test/ \
+            --access-key-id=$ACCESS_KEY_ID \
+            --access-key-secret=$ACCESS_KEY_SECRET \
+            --endpoint=oss-cn-wuhan-lr.aliyuncs.com \
+            --update \
+            --delete \
+            --only-current-dir
