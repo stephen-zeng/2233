@@ -41,7 +41,7 @@ jobs:
         run: |
           # 使用 sync 命令并配合 --update 和 --delete 参数
           # 这将实现本地与 OSS 之间完美的镜像同步
-          ossutil sync ./ oss://img535a/2233-test/ \
+          ossutil sync ./ oss://img535a/2233/ \
             --access-key-id=$ACCESS_KEY_ID \
             --access-key-secret=$ACCESS_KEY_SECRET \
             --endpoint=oss-cn-wuhan-lr.aliyuncs.com \
