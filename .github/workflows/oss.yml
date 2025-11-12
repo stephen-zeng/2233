@@ -39,15 +39,12 @@ jobs:
           ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
           ACCESS_KEY_SECRET: ${{ secrets.ACCESS_KEY_SECRET }}
         run: |
-          rm -rf .git
-          rm -rf .github
-          rm -rf ossutil*
           # 使用 sync 命令并配合 --update 和 --delete 参数
           # 这将实现本地与 OSS 之间完美的镜像同步
           ossutil sync ./ oss://img535a/2233-test/ \
             --access-key-id=$ACCESS_KEY_ID \
             --access-key-secret=$ACCESS_KEY_SECRET \
             --endpoint=oss-cn-wuhan-lr.aliyuncs.com \
-            --include "*.webp" \
             --update \
-            --delete
+            --delete \
+            --only-current-dir
