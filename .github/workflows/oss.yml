@@ -1,35 +1,31 @@
-name: Sync to Aliyun OSS
+name: Sync to S3 via rclone (Checksum)
 
 on:
   push:
     branches:
-      - main  # 仅在推送到 main 分支时触发
+      - main # 仅在 main 分支有推送时触发
 
 jobs:
-  sync-to-oss:
+  rclone-sync:
     runs-on: ubuntu-latest
     steps:
-      # 步骤1: 检出您的仓库代码
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Cache ossutil snapshot
-        uses: actions/cache@v3
+      - name: rclone sync to S3
+        uses: rclone/rclone-action@v1.4.0
         with:
-          # 需要缓存的文件夹路径
-          path: .snapshot 
-          key: ${{ runner.os }}-ossutil-snapshot-main
-
-      - name: Restore file mtime from git
-        uses: chetan/git-restore-mtime-action@v2
-
-      # 步骤2: 下载、解压并安装指定版本的 ossutil
-      - name: Install specific ossutil version
-        uses: fangbinwei/aliyun-oss-website-action@v1
-        with:
-            accessKeyId: ${{ secrets.ACCESS_KEY_ID }}
-            accessKeySecret: ${{ secrets.ACCESS_KEY_SECRET }}
-            bucket: img535a
-            # use your own endpoint
-            endpoint: oss-cn-wuhan-lr.aliyuncs.com/2233-test
-            folder: .
+          rclone_config: |
+            [s3]
+            type = s3
+            provider = Alibaba
+            env_auth = true
+            access_key_id = ${{ secrets.ACCESS_KEY_ID }}
+            secret_access_key = ${{ secrets.ACCESS_KEY_SECRET }}
+            region = ${{ secrets.REGION }}
+            endpoint = ${{ secrets.ENDPOINT }}
+          args: |
+            sync . s3:${{ secrets.BUCKET_NAME }}/2233-test/ \
+            --checksum \
+            --fast-list \
+            --progress
