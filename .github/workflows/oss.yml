@@ -31,6 +31,8 @@ jobs:
           
           # (可选) 清理下载的压缩包
           rm ossutil.zip
+          rm -rf .github
+          rm -rf .git
 
       # 步骤3: 使用 sync --update --delete 执行增量同步
       - name: Sync incrementally to OSS (with delete)
