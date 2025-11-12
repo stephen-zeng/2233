@@ -20,8 +20,8 @@ jobs:
           path: .snapshot 
           key: ${{ runner.os }}-ossutil-snapshot-main
 
-      - name: Restore Git commit timestamp
-        uses: cioTApp/action-git-time@v1
+      - name: Restore file mtime from git
+        uses: chetan/git-restore-mtime-action@v2
 
       # 步骤2: 下载、解压并安装指定版本的 ossutil
       - name: Install specific ossutil version
