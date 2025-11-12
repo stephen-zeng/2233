@@ -55,4 +55,4 @@ jobs:
             --update \
             --delete \
             --only-current-dir \
-            --snapshot-path=".snapshot"
+            --snapshot-path .snapshot/
