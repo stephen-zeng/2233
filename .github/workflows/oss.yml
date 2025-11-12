@@ -39,6 +39,9 @@ jobs:
           ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
           ACCESS_KEY_SECRET: ${{ secrets.ACCESS_KEY_SECRET }}
         run: |
+          rm -rf .git
+          rm -rf .github
+          rm -rf ossutil*
           # 使用 sync 命令并配合 --update 和 --delete 参数
           # 这将实现本地与 OSS 之间完美的镜像同步
           ossutil sync ./ oss://img535a/2233-test/ \
