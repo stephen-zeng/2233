@@ -13,6 +13,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Cache ossutil snapshot
+        uses: actions/cache@v3
+        with:
+          # 需要缓存的文件夹路径
+          path: .snapshot 
+          key: ${{ runner.os }}-ossutil-snapshot-main
+
       # 步骤2: 下载、解压并安装指定版本的 ossutil
       - name: Install specific ossutil version
         run: |
