@@ -44,6 +44,6 @@ jobs:
           ossutil sync ./ oss://img535a/2233-test/ \
             --access-key-id=$ACCESS_KEY_ID \
             --access-key-secret=$ACCESS_KEY_SECRET \
-            --endpoint=your-endpoint \
+            --endpoint=oss-cn-wuhan-lr.aliyuncs.com \
             --update \
             --delete
