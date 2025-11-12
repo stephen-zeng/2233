@@ -45,5 +45,8 @@ jobs:
             --access-key-id=$ACCESS_KEY_ID \
             --access-key-secret=$ACCESS_KEY_SECRET \
             --endpoint=oss-cn-wuhan-lr.aliyuncs.com \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "ossutil*" \
             --update \
             --delete
