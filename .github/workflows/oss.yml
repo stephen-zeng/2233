@@ -3,7 +3,7 @@ name: Sync to Aliyun OSS
 on:
   push:
     branches:
-      - sync  # 仅在推送到 main 分支时触发
+      - main 
 
 jobs:
   sync-to-oss:
@@ -11,39 +11,56 @@ jobs:
     steps:
       # 步骤1: 检出您的仓库代码
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 必须设置为 0，拉取所有提交历史，用于还原真实文件时间
 
-      # 步骤2: 下载、解压并安装指定版本的 ossutil
-      - name: Install specific ossutil version
+      # 步骤2: 恢复文件的最后修改时间（完美增量同步的核心）
+      - name: Restore file modification times
         run: |
-          # 下载您指定的 zip 压缩包
+          echo "Restoring file modification times based on git history..."
+          git ls-files -z | while IFS= read -r -d '' file; do
+            commit_time=$(git log -1 --format="%ct" "$file")
+            if [ -n "$commit_time" ]; then
+              touch -d "@$commit_time" "$file"
+            fi
+          done
+
+      # 步骤3: 缓存 ossutil 可执行文件
+      - name: Cache ossutil
+        id: cache-ossutil
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/ossutil
+          key: ${{ runner.os }}-ossutil-1.7.19 # 根据系统和版本号设置缓存 key
+
+      # 步骤4: 安装 ossutil（仅当缓存未命中时执行）
+      - name: Install specific ossutil version
+        if: steps.cache-ossutil.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache missed. Downloading ossutil..."
           curl -L "https://gosspublic.alicdn.com/ossutil/1.7.19/ossutil-v1.7.19-linux-amd64.zip" -o ossutil.zip
-          
-          # 解压文件
           unzip ossutil.zip
+          sudo mv ossutil-v1.7.19-linux-amd64/ossutil64 /usr/local/bin/ossutil
+          sudo chmod +x /usr/local/bin/ossutil
           
-          # 从解压出的文件夹中将可执行文件移动到系统路径下，并重命名为 ossutil
-          # 注意：文件夹名称需要和压缩包内的实际名称匹配
-          mv ossutil-v1.7.19-linux-amd64/ossutil64 /usr/local/bin/ossutil
-          
-          # 赋予执行权限
-          chmod +x /usr/local/bin/ossutil
-          
-          # (可选) 清理下载的压缩包
+          # 清理安装包
           rm ossutil.zip
+          rm -rf ossutil-v1.7.19-linux-amd64
+
+      # 步骤5: 独立步骤：清理无需上传的仓库元数据（必须放在缓存逻辑之外，确保每次都执行）
+      - name: Clean up repository metadata
+        run: |
+          echo "Removing .git and .github to prevent syncing them to OSS..."
           rm -rf .github
           rm -rf .git
-          rm -rf ossutil*
 
-      # 步骤3: 使用 sync --update --delete 执行增量同步
+      # 步骤6: 使用 sync --update --delete 执行增量同步
       - name: Sync incrementally to OSS (with delete)
         env:
-          # 从 GitHub Secrets 中读取阿里云凭证
           ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
           ACCESS_KEY_SECRET: ${{ secrets.ACCESS_KEY_SECRET }}
         run: |
-          # 使用 sync 命令并配合 --update 和 --delete 参数
-          # 这将实现本地与 OSS 之间完美的镜像同步
           ossutil sync ./ oss://img535a/2233/ \
             --access-key-id=$ACCESS_KEY_ID \
             --access-key-secret=$ACCESS_KEY_SECRET \
